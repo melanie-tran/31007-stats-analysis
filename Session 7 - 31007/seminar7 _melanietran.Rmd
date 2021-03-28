@@ -1,0 +1,249 @@
+---
+title: "Seminar 7"
+author: "Melanie Tran"
+date: "11/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+dataPath <- setwd('/Users/meltra02/Desktop/MSCA/Quarter 1/31007 - Stats Analysis/Session 7 - 31007/')
+
+test_data <-read.csv(file=paste(dataPath,"test_sample.csv",sep="/"),
+             row.names=1,header=TRUE,sep=",")
+                          
+head(test_data)                        
+
+```
+
+First 7 variables (input variables) are daily records of the US Treasury yields to maturity.
+Plot input variables.
+```{r}
+matplot(test_data[,c(1:7)],type='l',ylab="Interest Rates",
+        main="History of Interest Rates",xlab="Index")
+```
+
+Plot input variables together with the output variable.
+```{r}
+matplot(test_data[,],type='l',ylab="Interest Rates",
+        main="History of Interest Rates and Output",xlab="Index")
+```
+
+**2. Rolling Window Analysis**
+
+```{r}
+Window.width <- 20
+Window.shift <- 5
+```
+
+```{r}
+library(zoo)
+
+all.means<-rollapply(test_data,width=Window.width,
+                     by=Window.shift,by.column=TRUE, mean)
+head(all.means)
+```
+```{r}
+mean(test_data$USGG3M[1:20])
+test_data$USGG3M[1:20]
+```
+
+
+The calculated vector is in the first row of all.means.
+```{r}
+apply(test_data[1:20,],2,mean)
+```
+
+
+The second row of all.means contains column averages of rows 6:25.
+```{r}
+apply(test_data[6:25,],2,mean)
+
+```
+
+Assign each calculated mean to the middle of the corresponding time window.
+
+Find midpoints at which rolling means are calculated.
+```{r}
+Count<-1:dim(test_data)[1]
+Rolling.window.matrix<-rollapply(Count,
+                                 width=Window.width,
+                                 by=Window.shift,
+                                 by.column=FALSE,FUN=function(z) z)
+Rolling.window.matrix[1:10,]    # sequence of index vectors of rolling windows
+```
+
+Middle of each window corresponds to row numbers in column 10 of this matrix.
+```{r}
+# Find middle of each window
+Points.of.calculation<-Rolling.window.matrix[,10]    
+Points.of.calculation[1:10]
+```
+
+```{r}
+length(Points.of.calculation)
+```
+
+Create vector of rolling means of the shortest rate USGG3M in the first column to plot it with the original data.
+
+```{r}
+Means.forPlot<-rep(NA,dim(test_data)[1])
+Means.forPlot[Points.of.calculation]<-all.means[,1]
+cbind(1:25,Means.forPlot[1:25])
+```
+Plot the rolling means with the original 3-month rates data
+```{r}
+cbind(originalData=test_data[,1],
+      rollingMeans=Means.forPlot)[1:25,]
+```
+
+
+```{r}
+plot(test_data[,1],type="l",col="blue",lwd=2,
+     ylab="Interest Rate & Rolling Mean", 
+     main="Rolling Mean of USGG3M")
+points(Means.forPlot,col="orange",pch=1)
+legend("topright",
+       legend=c("USGG3M","Rolling Mean"),
+       col=c("blue","orange"),lwd=2)
+```
+Add the dates to the plot.
+```{r}
+plot(test_data[,1],type="l",xaxt="n",col="blue",lwd=2,
+     ylab="Interest Rate & Rolling Mean", 
+     main="Rolling Mean of USGG3M")
+axis(side=1,at=1:dim(test_data)[1],rownames(test_data))
+points(Means.forPlot,col="orange",pch=1)
+legend("topright",
+       legend=c("USGG3M","Rolling Mean"),
+       col=c("blue","orange"),lwd=2)
+```
+
+
+```{r}
+cbind(originalData=test_data[,1],
+      rollingMeans=Means.forPlot)[1:25,]
+```
+
+Find the difference between the days. 
+```{r}
+head(as.matrix(test_data))
+
+difference <- diff(as.matrix(test_data))
+head(difference)
+
+```
+Calculate rolling sd. 
+```{r}
+rolling.sd <- rollapply(difference,width=Window.width,sd,
+                        by=Window.shift,by.column=TRUE)
+
+?rollapply
+head(rolling.sd)
+
+```
+
+Calculate rolling dates. 
+```{r}
+
+rolling.dates<-rollapply(test_data[-1,],
+                         width=Window.width,
+                         by=Window.shift,
+                         by.column=FALSE,
+                         FUN=function(z)
+                           rownames(z))
+
+head(rolling.dates)
+
+rownames(rolling.sd)<-rolling.dates[,10]
+head(rolling.sd)
+
+
+
+```
+
+Calculate volatility periods. 
+```{r}
+high.volatility.periods<-rownames(rolling.sd)[rolling.sd[,8]>=0.3]
+high.volatility.periods
+```
+
+Calculate the slopes. 
+```{r}
+slope_set<-rollapply(test_data, width=Window.width, FUN=function(z)
+  coef(lm(Output1~USGG3M+USGG5YR+USGG30YR, data=as.data.frame(z))),
+  by = Window.shift, by.column=FALSE, align="right")
+
+head(slope_set)
+```
+
+```{r}
+rolling.dates2<-rollapply(test_data[,1:8],
+                          width=Window.width,
+                          by=Window.shift,
+                          by.column=FALSE,
+                          FUN=function(z)
+                            rownames(z))
+
+
+head(rolling.dates2)
+head(rolling.dates)
+rownames(slope_set)<-rolling.dates2[,10] #why are we picking column 10?
+```
+Calculate slope spread periods. 
+```{r}
+high.slopeSpread.periods<-rownames(slope_set)[abs(slope_set[,3]-slope_set[,4])>3]
+
+high.slopeSpread.periods
+
+```
+
+Calculate high.slope5y. 
+
+```{r}
+high.slope5Y <- rownames(slope_set)[slope_set[,3] > 2.5]
+
+high.slope5Y
+```
+
+Calculate R squared. 
+```{r}
+
+rsquared <-rollapply(test_data, width=Window.width, FUN=function(z)
+  summary(lm(Output1~USGG3M+USGG5YR+USGG30YR, data=as.data.frame(z)))$r.squared,
+  by = Window.shift, by.column=FALSE, align="right")
+
+dataframe_R<-data.frame(date=rolling.dates2[,10],rsquared)
+
+head(dataframe_R)
+
+dfR_subset<-subset(dataframe_R, dataframe_R$rsquared <0.9)
+low.r.squared <-dfR_subset$date
+
+```
+Calculate the significance level. 
+```{r}
+p_value<-rollapply(test_data, width=Window.width, FUN=function(z)
+  summary(lm(Output1~USGG3M+USGG5YR+USGG30YR, data=as.data.frame(z)))$coeff[,4],
+  by = Window.shift, by.column=FALSE, align="right")
+
+rownames(p_value)<-rolling.dates2[,10]
+USGG3M_insignificant<-rownames(p_value)[p_value[,2]>0.05]
+USGG5Y_insignificant<-rownames(p_value)[p_value[,3]>0.05]
+USGG30Y_insignificant<-rownames(p_value)[p_value[,4]>0.05]
+```
+
+
+Store results. 
+
+```{r}
+res <- list(high.volatility.periods=high.volatility.periods,
+              high.slopeSpread.periods=high.slopeSpread.periods,
+              high.slope5Y=high.slope5Y,
+              low.r.squared = low.r.squared,
+              USGG3M_insignificant=USGG3M_insignificant,
+              USGG5Y_insignificant=USGG5Y_insignificant,
+              USGG30Y_insignificant=USGG30Y_insignificant)
+
+saveRDS(res, file = paste(dataPath,'result.rds',sep = '/'))
+```
+

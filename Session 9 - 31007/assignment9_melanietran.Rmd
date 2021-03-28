@@ -1,0 +1,131 @@
+---
+title: "Assignment 9 - 37010"
+author: "Melanie Tran"
+date: "12/2/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+dataPath <- setwd('/Users/meltra02/Desktop/MSCA/Quarter 1/31007 - Stats Analysis/Session 9 - 31007/')
+
+test_dat <- read.table(paste(dataPath,'Week9_Test_Sample.csv',sep = '/'), header=TRUE)
+```
+
+1.Set up matrix with all predictors (x) no response (y)
+
+```{r}
+head(test_dat)
+
+#1 set up matrix with all predictors (x) no response (y)
+head(as.matrix(test_dat[,-1]))
+
+my_matrix <- as.matrix(test_dat[,-1])
+```
+
+2. Use princomp() to perform PCA
+
+```{r}
+princomp(my_matrix)
+
+PCA_test <- princomp(my_matrix)
+PCA_test
+```
+
+3. Look at the loadings and scores- aka factors or components. 
+
+```{r}
+PCA_test$loadings #gives you the weight of each predictor 
+head(PCA_test$scores)
+```
+
+4. Use summary() of the PCA to determine the cumulative proportion (amount of variance explained by the predictor).
+```{r}
+summary(PCA_test)
+```
+
+HW 1). What is the smallest number of factors sufficient for explanation of at least: 97.01617 % of the total variance of predictors?
+
+```{r}
+#You would need 3 factors - the first three factors by looking at their cumulative proportion.
+```
+
+5. For Q3, create linear model of the responses on all predictors. 
+
+```{r}
+my_lm_predictors <- lm(Resp ~., data = test_dat)
+summary(my_lm_predictors)
+```
+
+6. Calculate R^2 using summary.
+```{r}
+lm_predictor_r2 <- summary(my_lm_predictors)$r.squared
+lm_predictor_r2
+```
+`
+
+
+7. Calculate the target which is R^2 * 0.9 (which is given in the assignment.)
+```{r}
+(target <- lm_predictor_r2 * 0.9)
+
+```
+Use PCA to look at the components/scores. We will end up needing to re-arrange the components based on the nested R^2.
+
+8. Create a data frame that binds together the components for each of the predictors
+
+```{r}
+#create a data frame that binds together the components for each of the predictors
+as.data.frame(cbind(Resp = test_dat$Resp, PCA_test$scores)) 
+my_components <- as.data.frame(cbind(Resp = test_dat$Resp, PCA_test$scores)) 
+my_components
+```
+9. Create a linear model of the responses onto everything using the components data.
+```{r}
+my_lm_components <- lm(Resp ~., data = my_components)
+my_lm_components
+```
+10. Import the library relaimpo to calculate PCA for lmg. (RELATIVE IMPORTANCE)
+```{r}
+library(relaimpo)
+
+new_pca <- calc.relimp(my_lm_components, type = c("lmg", "first", "last", "betasq", "pratt"))
+new_pca@lmg.rank #shows you the rank of the components - need to be reordered
+```
+
+
+
+11. Reorder the components.
+```{r}
+orderedComponents <- c(2, 4, 1, 3, 7, 8, 5, 10, 9, 6)
+response_components_reordered <- my_components[,c(1, orderedComponents+1)]
+response_components_reordered
+```
+
+12. Perform the nested R^2.
+```{r}
+(nestedRsquared <- sapply(2:11,function(z) summary(lm(Resp ~., data = response_components_reordered[,1:z]))$r.squared))
+plot(1:10,nestedRsquared,type = "b",xlab = "Number of Variables", ylab = "R.Squared", lty = 1, lwd = 2, pch = 16)
+target
+```
+```{r}
+summary(princomp((as.matrix(my_components[,-1]))))
+```
+```{r}
+target
+```
+```{r}
+response_components_reordered
+summary(princomp((as.matrix(response_components_reordered[,-1]))))
+
+```
+```{r}
+head(response_matrix)
+```
+
+
+```{r}
+response_matrix <- as.matrix(response_components_reordered[,-1])
+summary(princomp(response_matrix))
+
+```
+

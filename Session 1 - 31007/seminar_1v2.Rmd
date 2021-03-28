@@ -1,0 +1,90 @@
+---
+title: 'Seminar #1 - 31007'
+author: "Melanie Tran"
+date: "10/3/2020"
+output: html_document
+---
+
+
+```{r}
+dataPath <- setwd('/Users/meltra02/Desktop/MSCA/Quarter 1/31007 - Stats Analysis/Session 1 - 31007')
+library(dplyr)
+test_data <- read.table(paste(dataPath,'Simpson_Class.csv',sep = '/'), header=TRUE)
+
+test_data$A
+test_data$B
+test_data$C
+```
+
+
+```{r}
+#when B = 5, when B > A, when B > C
+b5_data <- subset(test_data, B == 5,select=c(A,B,C)) 
+b5 <- length(b5_data$B)
+b5_greater_ac <- sum(b5_data$B > b5_data$A & b5_data$B > b5_data$C, na.rm=TRUE)/b5
+
+```
+
+
+```{r}
+#when C = 4, when C > A, when C > B
+c4_data <- subset(test_data, C == 4,select=c(A,B,C))
+(test_data[test_data$C==4,])
+c4 <- length(c4_data$C)
+
+c4_greater_ab <- sum(c4_data$C > c4_data$A & c4_data$C > c4_data$B, na.rm=TRUE)/c4
+
+```
+
+```{r}
+#when A > B, A > C
+n <- length(test_data$A)
+
+a_greater_bc <- sum(test_data$A > test_data$B & test_data$A > test_data$C, na.rm=TRUE)/n
+
+
+```
+
+```{r}
+#when B > A,  B > C
+n <- length(test_data$A)
+b_greater_ac <- sum(test_data$B > test_data$A & test_data$B > test_data$C, na.rm=TRUE)/n
+
+```
+
+
+```{r}
+#when C > A,  C > B
+n <- length(test_data$A)
+c_greater_ab <- sum(test_data$C > test_data$A & test_data$C > test_data$B, na.rm=TRUE)/n
+
+
+```
+
+```{r}
+#A vs B 
+n <- length(test_data$A)
+a_greater_b <- sum(test_data$A > test_data$B, na.rm=TRUE)/n
+```
+
+```{r}
+#A vs B 
+n <- length(test_data$A)
+b_greater_a <- sum(test_data$B > test_data$A, na.rm=TRUE)/n
+```
+
+
+
+```{r}
+print(paste("P(B>A, B>C | B = 5):", b5_greater_ac))
+print(paste("P(C>A, C>B | C = 4):", c4_greater_ab))
+print(paste("P(A>B, A>C):", a_greater_bc))
+print(paste("P(B>A, B>C):", b_greater_ac))
+print(paste("P(C>A, C>B):", c_greater_ab))
+
+
+print(paste("P(A>B):", a_greater_b))
+print(paste("P(B>A):", b_greater_a))
+```
+
+P(B>A) `r b_greater_a`

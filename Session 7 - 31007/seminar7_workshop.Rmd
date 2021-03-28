@@ -1,0 +1,90 @@
+---
+title: "Seminar 7 - Workshop"
+author: "Melanie Tran"
+date: "11/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+swiss
+```
+```{r}
+
+#Fertility is the response variable,
+#Agriculture is the percentage of males working in agriculture,
+#Examination is the percentage of draftees getting highest mark on an army exam,
+#Education is the percentage of draftees having more than primary school education,
+#Catholic is the percentage of Catholics in the population (as opposed to protestant Christians),
+#Infant Mortality is the percentage of live births who die within the first year.
+
+dat<-swiss
+summary(dat)
+```
+
+```{r}
+pairs(dat)
+#posititve relationship between examination and education
+#no middle majority for catholic - either extremely catholic or not
+```
+
+Look at correlation of each pair of variables.
+```{r}
+round(cor(dat),digits = 2)
+```
+
+Some predictors are significantly correlated.
+```{r}
+cor(dat[,-1])
+```
+
+```{r}
+pairs(dat[,-1])
+```
+
+Explore ANOVA table. Fit lm and check summary & ANOVA
+```{r}
+linmod <- lm(Fertility ~ ., data = dat)
+summary(linmod)
+```
+```{r}
+anova(linmod)
+#For each predictor, we have Sum Sq explained by the predictor 
+#Variance in Fertility that can be matched to each variance in the variables
+#You have 2105.04 "points" leftover that cannot be explained by the predictors
+
+
+#70% of variance in Fertility can be explained by any of the variance of the predictors R**2 <- (0.7067)
+```
+
+How do we decide what predictors we need? Apply methods of variable selection.
+
+Create Full Model
+```{r}
+full.model <- lm(Fertility ~ ., swiss)
+summary(full.model)
+
+```
+Backwards Elimination
+
+AIC = measures information and sometimes it shows its going up or down depending on what you drop 
+**MINIMIZE AIC!** 
+The lower the AIC, the more it makes the data very likely to occur 
+The higher the AIC, the worse the fit
+```{r}
+drop1(full.model)
+#shows us what would happen if we dropped no predictors (none) or one predictor
+#Based on AIC criteria, we should drop Examination
+```
+
+Create a lm with everything except for Examination.
+```{r}
+fourx.model <- lm(Fertility ~ Agriculture + Education + Catholic + Infant.Mortality, swiss)
+summary(fourx.model)
+```
+
+Should we drop anything else? 
+```{r}
+drop1(fourx.model)
+#Based on AIC alone, we should not drop anything else because AIC would increase
+```
+

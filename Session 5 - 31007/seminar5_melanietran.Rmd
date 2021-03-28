@@ -1,0 +1,93 @@
+---
+title: "Seminar - 5"
+author: "Melanie Tran"
+date: "10/29/2020"
+output: html_document
+---
+
+Set up the data.
+```{r}
+dataPath <- setwd('/Users/meltra02/Desktop/MSCA/Quarter 1/31007 - Stats Analysis/Session 5 - 31007')
+test_data <- read.table(paste(dataPath,'Benford_Class.csv',sep = '/'), header=TRUE)
+head(test_data)
+
+```
+
+Use benford.
+```{r}
+library(benford.analysis)
+
+#use benford to analyze payments
+bfd <- benford(test_data$x) 
+bfd 
+names(bfd)
+```
+
+Find the numbers. 
+```{r}
+#print the digits in decreasing order of difference
+numbers <- suspectsTable(bfd, by = "difference")[c(89, 2, 88, 5, 90, 1), ]
+numbers
+```
+
+Compare Chi-squared test results returned by benford() with manually calculated Chi-squared test.Extract first two digits from the payments column
+
+```{r}
+dig<-extract.digits(test_data$x,number.of.digits = 2)
+head(dig)
+
+```
+
+Calculate observed counts of pairs of digits from 10 to 99 and their frequencies.
+
+```{r}
+observed<-table(dig[,2])
+probObserved<-observed/sum(observed)
+head(cbind(observed,probObserved))
+
+
+```
+
+Calculate theoretical Benford's probabilities of these digits.
+```{r}
+dbenford<-p.these.digits(10:99)
+head(dbenford,10)
+
+```
+
+Make the comparison and run chi square test.
+```{r}
+chisq.test(x=observed,p=dbenford)
+Chi_square_p.value <- bfd$stats$chisq$p.value
+Chi_square_p.value
+```
+Find Mantissa p.value
+```{r}
+Mantissa_p.value <- bfd$stats$mantissa.arc.test$p.value
+Mantissa_p.value
+```
+Find MAD.
+```{r}
+
+names(bfd)
+MAD <- bfd$MAD
+MAD
+```
+```{r}
+MAD.conformity <- bfd$MAD.conformity
+MAD.conformity
+```
+
+Save results.
+```{r}
+
+res <- list(numbers=numbers,
+            Chi_square_p.value = Chi_square_p.value,
+            Mantissa_p.value = Mantissa_p.value,
+            MAD = MAD,
+            MAD.conformity  = MAD.conformity
+            )
+
+saveRDS(res, file = paste(dataPath,'result.rds',sep = '/'))
+```
+

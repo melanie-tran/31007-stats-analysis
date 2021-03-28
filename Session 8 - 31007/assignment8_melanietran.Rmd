@@ -1,0 +1,84 @@
+---
+title: "Assignment 8 - 31007"
+author: "Melanie Tran"
+date: "11/16/2020"
+output: html_document
+---
+
+```{r}
+dataPath <- setwd('/Users/meltra02/Desktop/MSCA/Quarter 1/31007 - Stats Analysis/Session 8 - 31007/')
+
+test_dat <- read.table(paste(dataPath,'Week8_Test_Sample.csv',sep = '/'), header=TRUE)
+
+```
+
+```{r}
+test_dat$Output #output values
+test_dat$Treatment #predictor values
+
+```
+
+Calculate summary statistics. Create the 2-column matrix of group means and sizes. 
+```{r}
+summaryByGroup<-aggregate(Output~ Treatment,data=test_dat,FUN=summary)
+means<-cbind(Means=summaryByGroup$Output[,4],Sizes=aggregate(Output~Treatment,data=test_dat,FUN=length)$Output)
+rownames(means)<-as.character(summaryByGroup$Treatment)
+
+means
+```
+
+ANOVA for the data. 
+
+Create Models
+```{r}
+model.treatment <- lm(Output ~ Treatment, data = test_dat)
+treatment.summary <- summary(model.treatment)
+treatment.anova <- anova(model.treatment)
+
+
+alt.treatment <- lm(Output ~ Treatment-1, data = test_dat)
+alt.summary <- summary(alt.treatment)
+alt.anova <- anova(alt.treatment)
+```
+
+
+Create matrix with dummy variable inputs for ANOVA 
+
+```{r}
+treat_data <-test_dat
+treat_data$x1<-treat_data$Treatment=="B"
+treat_data$x2<-treat_data$Treatment=="C"
+treat_data
+```
+
+
+```{r}
+treat.model.full <- lm(Output~x1+x2, data = treat_data)
+anova(treat.model.full)
+```
+Basis with Alt <- use this to get Sum of Squares 
+
+```{r}
+summary(alt.treatment)
+anova(alt.treatment)$"Sum Sq"
+```
+
+Find SSE and SSM. 
+```{r}
+
+grand.mean<-mean(test_dat$Output)
+create.vector.of.means<-function(my.group.data) {
+  rep(my.group.data[1],my.group.data[2])
+}
+group.mean<-unlist(apply(means,1,create.vector.of.means))
+means
+
+
+SST<-sum((test_dat$Output-grand.mean)^2)
+SSE<-sum((test_dat$Output-group.mean)^2)
+SSM<-sum((group.mean-grand.mean)^2)
+
+cbind(SST = SST, SSE = SSE, SSM = SSM)
+
+```
+

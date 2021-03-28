@@ -1,0 +1,258 @@
+---
+title: "Seminar 10 - Workshop"
+author: "Melanie Tran"
+date: "12/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+#dataPath <- setwd('/Users/meltra02/Desktop/MSCA/Quarter 1/31007 - Stats Analysis/Session 9 - 31007/')
+
+```
+
+```{r}
+head(swiss)
+```
+
+```{r}
+rownames(swiss)
+```
+
+```{r}
+head(swiss[,-1])#fertility is the response variable
+```
+
+```{r}
+swissPredictors<-swiss[,-1]
+pairs(swiss)
+```
+```{r}
+cor(swiss)
+```
+1.1 Linear model analysis using summary() and drop1()
+```{r}
+linMod<-lm(Fertility~.,data=swiss)
+summary(linMod)
+```
+```{r}
+drop1(linMod)
+```
+
+Drop Examination
+```{r}
+linMod.noExamination<-lm(Fertility~Agriculture+Education+Catholic+Infant.Mortality,data=swiss)
+summary(linMod.noExamination)
+```
+
+1.2 Relative Importance Measures
+```{r}
+suppressMessages(library(relaimpo))
+```
+
+
+```{r}
+metrics.swiss <- calc.relimp(linMod, type = c("lmg", "first", "last","betasq", "pratt"))
+metrics.swiss
+```
+```{r}
+slotNames(metrics.swiss)
+```
+
+```{r}
+(metrics.swiss.rank<-metrics.swiss@lmg.rank)
+```
+
+```{r}
+(metrics.swiss.rank<-metrics.swiss@lmg.rank)
+```
+```{r}
+(totalRSq.lmg<-sum(metrics.swiss@lmg))
+```
+
+```{r}
+sum(metrics.swiss@first)
+```
+Compare totalRSq.lmg with the summary of linear model linMod.
+Compare the sum of metrics.swiss@first with the summary of linear model linMod and with the sum of squares of correlation coefficients of predictors and the output.
+
+```{r}
+sum(apply(swiss[,-1],2,cor,swiss[,1])^2)
+```
+
+
+Which predictor is selected as the most important by the measures of relative importance?
+What is the best model containing 4 predictors according to different measures?
+
+Fit linear model with the selected four most important predictors using lmg. (NOT AGRICULTURE)
+
+```{r}
+linMod.noAgriculture<-lm(Fertility~Examination+Education+Catholic+Infant.Mortality,data=swiss)
+summary(linMod.noAgriculture)
+```
+There is one new insignificant predictor: Examination:
+
+```{r}
+drop1(linMod.noAgriculture)
+```
+
+Fit the recommended model.
+```{r}
+linMod.noAgriculture.noExamination<-lm(Fertility~Education+Catholic+Infant.Mortality,data=swiss)
+summary(linMod.noAgriculture.noExamination)
+```
+1.3 Selection of predictors based on regsubsets()
+
+```{r}
+library(leaps)
+```
+```{r}
+subsetsSwiss<-regsubsets(x=swiss[2:6],y=swiss$Fertility)
+summary(subsetsSwiss)$which
+```
+
+```{r}
+summary(subsetsSwiss)$rsq
+```
+
+
+1.4 Selection of predictors based on PCA
+Run PCA on predictors.
+```{r}
+(swissPredictors.PCA<-princomp(swissPredictors))
+```
+
+Explore the PCA object swissPredictors.PCA.
+Find relative importance of the factors.
+
+```{r}
+names(swissPredictors.PCA)
+```
+```{r}
+plot(swissPredictors.PCA)
+```
+
+
+
+```{r}
+swissPredictors.PCA$sdev^2
+
+```
+
+
+```{r}
+barplot(swissPredictors.PCA$sdev^2/sum(swissPredictors.PCA$sdev^2),ylim=c(0,1))
+```
+```{r}
+cumsum(swissPredictors.PCA$sdev^2/sum(swissPredictors.PCA$sdev^2))
+```
+
+Interpret factor loadings. 
+```{r}
+(swissPCALoadings<-swissPredictors.PCA$loadings)
+```
+
+```{r}
+#Plot loadings
+matplot(1:5,swissPredictors.PCA$loadings,type="l",lty=1,lwd=2,xaxt="n",xlab="Predictor",ylab="Factor Loadings",ylim=c(-1,1.5),col=c("black","red","blue","green","cyan"))
+abline(h=0)
+axis(1, 1:5,labels=colnames(swissPredictors))
+legend("topright",legend=c("L1","L2","L3","L4","L5"),lty=1,lwd=2,cex=.7,col=c("black","red","blue","green","cyan"))
+```
+
+What is center? ( y means)
+```{r}
+swissPredictors.PCA$center
+```
+
+Create new data frame with principal components as predictors.
+```{r}
+swissPCAFactors<-swissPredictors.PCA$scores
+swissRotated<-as.data.frame(cbind(Fertility=swiss$Fertility,swissPCAFactors))
+head(swissRotated)
+head(swiss)
+```
+
+Look at the factors (scores)
+
+```{r}
+#Plot
+matplot(swissPredictors.PCA$scores,type="l",lty=1,lwd=2,ylim=c(-60,70),col=c("black","red","blue","green","cyan"))
+legend("topright",legend=c("F1","F2","F3","F4","F5"),lty=1,lwd=2,col=c("black","red","blue","green","cyan"))
+
+
+```
+```{r}
+#Pairs
+pairs(as.matrix(swissRotated))
+```
+
+```{r}
+#Correlation matrix
+cor(swissPredictors.PCA$scores)
+```
+
+Look at the relationships of factors and the column Fertility.
+```{r}
+(rSqrCorrelations<-apply(swissPredictors.PCA$scores,2,cor,swiss$Fertility)^2)
+```
+
+```{r}
+sum(rSqrCorrelations)
+```
+Fit linear model with the PCA factors as predictors.
+```{r}
+linModPCA<-lm(Fertility~.,data=swissRotated)
+summary(linModPCA)
+```
+```{r}
+summary(linMod)
+```
+
+Calculate relative importance measures for the PCA factors.
+```{r}
+metrics.swiss.pca <- calc.relimp(linModPCA, type = c("lmg", "first", "last","betasq", "pratt"))
+metrics.swiss.pca
+```
+
+```{r}
+metrics.swiss.pca@lmg.rank
+```
+
+```{r}
+sum(metrics.swiss.pca@lmg)
+```
+
+Reorder the components from high importance to low importance and fit the sequence of linear models.
+```{r}
+orderComponents<-c(3,1,5,2,4)
+swissRotatedReordered<-swissRotated[,c(1,orderComponents+1)]
+(nestedRSquared<-sapply(2:6,function(z) summary(lm(Fertility~.,data=swissRotatedReordered[,1:z]))$r.squared))
+```
+```{r}
+matplot(cbind(Regsubsets=summary(subsetsSwiss)$rsq,PCA=nestedRSquared),type="b",xlab="Number of Variables",ylab="R.Squared",lty=1,lwd=2,pch=16)
+legend("bottomright",legend=c("Regsubsets","nestedRSquared"),lty=1,lwd=2,col=c("black","red"))
+```
+Check if regsubsets() gives a different solution in case of PCA factors as predictors.
+```{r}
+library(leaps)
+subsetsSwissRotated<-regsubsets(x=swissPredictors.PCA$scores,y=swiss$Fertility)
+summary(subsetsSwissRotated)$which
+```
+
+```{r}
+summary(subsetsSwissRotated)$rsq
+```
+1.5 Restoring slopes for original predictors
+```{r}
+(PCA.rank<-metrics.swiss.pca@last.rank)
+```
+
+```{r}
+orderedLoadings<-swissPCALoadings[,order(PCA.rank)]
+orderedCoefficientsPCA<-linModPCA$coefficients[-1][order(PCA.rank)]
+
+restoredCoefficients<-orderedLoadings%*%orderedCoefficientsPCA
+cbind(restoredCoefficients,linMod$coefficients[-1])
+```
+

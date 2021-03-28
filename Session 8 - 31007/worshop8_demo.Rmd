@@ -1,0 +1,284 @@
+---
+title: "Workshop 8 - Demo - 31007"
+author: "Melanie Tran"
+date: "11/16/2020"
+output: html_document
+---
+
+```{r}
+dataPath <- setwd('/Users/meltra02/Desktop/MSCA/Quarter 1/31007 - Stats Analysis/Session 8 - 31007/')
+
+```
+
+```{r}
+library(faraway)
+coagulation
+```
+
+```{r}
+plot(coag~diet, data=coagulation, pch=19,col="black")
+```
+
+Calculate summary statistics. Create the 2-column matrix of group means and sizes. 
+```{r}
+summaryByGroup<-aggregate(coag~diet,data=coagulation,FUN=summary)
+means<-cbind(Means=summaryByGroup$coag[,4],Sizes=aggregate(coag~diet,data=coagulation,FUN=length)$coag)
+rownames(means)<-as.character(summaryByGroup$diet)
+means
+```
+
+
+```{r}
+Group1.dietA<-subset(coagulation,coagulation$diet=="A")
+Group1.dietA
+
+Group2.dietB<-subset(coagulation,coagulation$diet=="B")
+Group2.dietB
+
+
+```
+
+```{r}
+summary(Group1.dietA)
+```
+
+```{r}
+mean(Group1.dietA[,1])
+```
+
+ANOVA for the data. 
+
+Fit linear model for coag~diet. 
+```{r}
+coag.model <-  lm(coag~diet, data = coagulation)
+modelSummary <- summary(coag.model)
+modelANOVA <- anova(coag.model)
+```
+
+Model coefficients.
+```{r}
+modelSummary$coefficients
+```
+
+Model degrees of freedom.
+```{r}
+modelSummary$df
+```
+
+Estimate of the residual standard deviation and R^2. 
+
+```{r}
+c(Sigma=modelSummary$sigma,Rsquared=modelSummary$r.squared)
+```
+
+F-statistic.
+```{r}
+modelSummary$fstatistic
+```
+
+ANOVA table.
+```{r}
+modelANOVA
+```
+
+1. If the formula is coag~diet then why are we getting estimates of the parameters dietB, dietC, and dietD?
+
+```{r}
+#degrees of freedom?
+```
+
+2. Analize statistical significance of all parameters based on p-values and standard errors.
+
+3. Analize the values of parameters and interpret them.
+For example, What does the value of coefficient for dietC tell you?
+
+```{r}
+#Diet D produces no effect on the level of coagulation because its P-value is high and its estimate is close to 0.
+
+#Diet C produces a large effect on the coagulation - the greater Diet C, the higher the level of coagulation (the estimate is high)
+
+modelSummary$coefficients
+```
+
+
+4. Analize the goodness of fit based on the determination coefficient, F-statistic.
+
+Adjusted R-squared is used to determine how reliable the correlation is and how much is determined by the addition of independent variables. 
+```{r}
+modelSummary$r.squared
+# Adjusted r square is less than r squared which means there are too many variables included.
+modelSummary
+
+#F stat is large which means there is larger SSM (variability between the groups) than SSE (variability within the groups), thus you should reject the null hypothesis.
+modelSummary$fstatistic
+```
+
+5. Analyze the residuals.
+```{r}
+plot(coag.model$residuals) 
+
+#residuals look homoscedasticty (variability is equal)
+```
+
+```{r}
+hist(coag.model$residuals)
+
+#residuals are normally distributed
+```
+
+```{r}
+qqnorm(coag.model$residuals)
+qqline(coag.model$residuals)
+```
+
+Create matrix with dummy variable inputs for ANOVA.
+```{r}
+coag<-coagulation
+coag$x1<-coag$diet=="B"
+coag$x2<-coag$diet=="C"
+coag$x3<-coag$diet=="D"
+coag
+```
+
+Why are we creating 3 input variables if we are given 4 groups?
+```{r}
+#Because A becomes 0 when applying the dummy variable inputs.
+```
+
+
+Fit full and null linear models for coag~x1+x2+x3 (all inputs) and coag~1 (intercept only).
+Compare the two models using anova.
+```{r}
+coag.model.full <- lm(coag~x1+x2+x3, data = coag)
+coag.model.null <- lm(coag~1, data = coag)
+anova(coag.model.null,coag.model.full)
+```
+
+```{r}
+summary(coag.model)
+```
+```{r}
+anova(coag.model)
+```
+
+```{r}
+anova(coag.model.null,coag.model.full)
+```
+
+Compare and explain the output of anova(coag.model.null,coag.model.full) with the outputs of summary(coag.model) and anova(coag.model).
+
+1. Compare degrees of freedom.
+2. Compare the sums of squares.
+3. compare the p-values.
+
+```{r}
+
+#Comparing to summary(coag.model)
+  #DF is equal 
+  #Sum of Squares = 228 in anova(full model)
+  #ovalue is equal 
+
+#Comparing to anova(coag.model)
+  #DF is equal - 20
+  #Sum of Squares = 228 
+  #Pvalue is equal 
+```
+
+
+Calculate manually the sum of squares shown in ANOVA table.
+
+In order to do that we need grand mean and the vector of full length of group means.
+```{r}
+grand.mean <- mean(coagulation$coag)
+create.vector.of.means <- function (my.group.data) { 
+  rep(my.group.data[1], my.group.data[2])
+}
+
+group.mean <- unlist(apply(means,1,create.vector.of.means))
+
+grand.mean
+group.mean
+```
+Calculate SST,SSE and SSM. Observe decomposition of the variance representation SST.
+```{r}
+SST <- sum((coagulation$coag - grand.mean)**2)
+SSE <- sum((coagulation$coag - group.mean)**2)
+SSM <- sum((group.mean - grand.mean)**2)
+
+c(SST = SST, SSE = SSE, SSM = SSM)
+```
+Compare the calculated sums of squares with anova(coag.model)
+```{r}
+anova(coag.model)$"Sum Sq"
+```
+```{r}
+anova(coag.model.null,coag.model.full)$"Sum of Sq"
+```
+2. Experiment Design
+Check what experiment plan (basis) R uses in lm:
+
+```{r}
+model.matrix(coag.model)
+```
+Explain the meaning of this matrix.
+
+Fit alternative model without intercept.
+Check its experiment plan (basis).
+```{r}
+coag.altmodel<-lm(coag~diet-1,data=coagulation)
+
+summary(coag.model)
+```
+
+```{r}
+model.matrix(coag.altmodel)
+```
+
+Compare ANOVA tables for coag.model and coag.altmodel.
+Explain difference between number of degrees of freedom for diet.
+
+```{r}
+
+cbind(coag_model_df  = anova(coag.model)$"Df"[2], alt_df = anova(coag.altmodel)$"Df"[2])
+
+#dfs are the same
+```
+
+Explain difference between sums of squares of diet
+```{r}
+
+# Sums of squares
+sum((group.mean-grand.mean)^2)
+sum(group.mean**2)
+
+cbind(coag_model_SSq  = anova(coag.model)$"Sum Sq"[1], alt_SSq = anova(coag.altmodel)$"Sum Sq"[1])
+
+
+#Alt model SSQ is much higher - there is a linear relationship between diet A and cogulation. In the regular model, we remove diet A. 
+```
+Explain difference between F-statistics.
+
+```{r}
+
+#F-statistics
+(sum((group.mean-grand.mean)^2)/3)/(sum((coagulation$coag-group.mean)^2)/(length(coagulation$coag)-4))
+
+(sum(group.mean^2)/4)/(sum((coagulation$coag-group.mean)^2)/(length(coagulation$coag)-4))
+
+cbind(coag_model_F  = anova(coag.model)$"F value", alt_SSq = anova(coag.altmodel)$"F value")
+
+#alt model f value is much higher. 
+
+summary(coag.altmodel)
+```
+
+Explain the differences between the two bases.
+
+Explain difference between null hypotheses tested by the two F-tests.
+```{r}
+#I would still reject the null hypothesis 
+
+# The one without the intercept is not a useful model, because it is asking if the group means are = 0, typically the F stat is saying are your group means different. 
+
+```
+

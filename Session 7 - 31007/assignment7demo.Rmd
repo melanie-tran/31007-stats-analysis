@@ -1,0 +1,176 @@
+---
+title: "Assignment 7 - MSCA 31007"
+author: "Melanie Tran"
+date: "11/8/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+dataPath <- setwd('/Users/meltra02/Desktop/MSCA/Quarter 1/31007 - Stats Analysis/Session 7 - 31007')
+
+``````
+
+```{r data, include = FALSE}
+Regression.ANOVA.Data<-
+  read.csv(file=paste(dataPath,"DataForRegressionANOVA.csv",sep="/"),
+           header=TRUE,sep=",")
+head(Regression.ANOVA.Data)
+nOutput <- length(Regression.ANOVA.Data$Output)
+
+```
+*1.2 Fit linear models using: no inputs, only Input1, only Input2, both Input1 and Input2.* 
+
+```{r}
+fit.1<-lm(Output~1,data=Regression.ANOVA.Data) #no inputs
+fit.1.2<-lm(Output~1+Input1,data=Regression.ANOVA.Data) #only Input1
+fit.1.3<-lm(Output~1+Input2,data=Regression.ANOVA.Data) #only Input 2
+fit.1.2.3<-lm(Output~.,data=Regression.ANOVA.Data) #Input 1 & Input 2
+plot(fit.1)
+
+```
+
+*2. Compare ANOVA table of each fit with the summary 2.1 Outputs of anova().*
+
+```{r}
+anova(fit.1.2)
+anova(fit.1)
+anova(fit.1.2.3)
+anova(fit.1.3)
+```
+
+
+Explain the following outputs and calculate them using only data and linear model fit (for example, Regression.ANOVA.Data and fit.1.2).
+
+Find Df.
+```{r}
+anova(fit.1)$Df #df = # of values - # of inputs?
+```
+Find Sum Sq.
+```{r}
+anova(fit.1.2)$"Sum Sq"
+
+SSM<-sum((fit.1.2$fitted.values-mean(Regression.ANOVA.Data$Output))^2) #302.8933
+SSM
+SSE<-sum(fit.1.2$residuals^2) #185.4275
+SSE
+
+y_bar <- mean(Regression.ANOVA.Data$Output)
+SST <- sum((Regression.ANOVA.Data$Output - y_bar)**2)
+SST
+```
+Find Fvalue.
+```{r}
+anova(fit.1.2)$"F value"[1]
+
+fStat<-(SSM/1)/(SSE/(nOutput-2))
+fStat
+```
+Find Pvalue.
+```{r}
+
+anova(fit.1.2)$"Pr(>F)"[1]
+p_value <- pf(fStat,1,nOutput-2,lower.tail=F)
+p_value
+
+```
+What does “<2.2e-16” mean in the output of anova()?
+```{r}
+#The p-value tells us the probability of getting this F statistics value (which is greater than 0) and its significance level.
+
+#If the p-value is less than our significance level, we reject the null hypothesis i.e. F statistics is 0.
+
+#We know that higher the F statistics, the more likely we are to reject the null hypothesis.
+
+#Also, the lower the p-value, the more likely we are to reject the null hypothesis.
+```
+
+
+*2.2 Compare summary(fit.1) and anova(fit.1)*
+```{r}
+summary(fit.1)
+```
+Why anova table does not show fields F value and Pr(>F)?
+F = variation between sample means / variation within the samples
+```{r}
+anova(fit.1)
+
+#There is no inputs, therefore when you perform the One-Way ANOVA test, the residuals are going to match the fitted? 
+
+# THere is no Pr(F>) because there is no F stat.
+```
+
+*2.3 Compare summary(fit.1.2) and anova(fit.1.2)*
+```{r}
+summary(fit.1.2)
+```
+```{r}
+anova(fit.1.2)
+```
+1.F-statistic and Pr(>F) in both outputs are equivalent
+```{r}
+summary(fit.1.2)$fstatistic
+c(F.value=anova(fit.1.2)$"F value"[1],Df=anova(fit.1.2)$Df,P.value=anova(fit.1.2)$"Pr(>F)"[1])
+```
+What is H0 for F value in anova(fit.1.2) and for F-statistic in summary(fit.1.2)?
+
+```{r}
+#The null hypothesis in ANOVA is always that there is no difference in means. The research or alternative hypothesis is always that the means are not all equal
+
+anova(fit.1.2)
+summary(fit.1.2)
+
+anova(fit.1.2)$"Mean Sq"[1]/anova(fit.1.2)$"Mean Sq"[2] #H0 of anova
+
+```
+
+2. Obtain R2 from anova() and calculate it manually
+```{r}
+summary(fit.1.2)$r.squared
+
+r_squared_1.2 <- 1 - (SSE/SST)
+
+cbind(anova = summary(fit.1.2)$r.squared, manual = r_squared_1.2 )
+```
+
+2.4 Compare summary(fit.1.3) and anova(fit.1.3)
+
+What do you conclude from the F-statistic and its p-value?
+What is the minimum level for which you reject the null hypothesis?
+What is the null hypothesis of this F-test?
+```{r}
+summary(fit.1.3)
+anova(fit.1.3)
+c(F.value=anova(fit.1.3)$"F value"[1],Df=anova(fit.1.3)$Df,P.value=anova(fit.1.3)$"Pr(>F)"[1])
+
+
+# The F-value is pretty small - almost close to 1 which means that the variance between the samples and the variance within the samples are close to the same. The P-value is > 0.05 which means we fail to reject the null hypothesis. 
+
+anova(fit.1.3)$"Mean Sq"[1]/anova(fit.1.3)$"Mean Sq"[2] # f statH0 of anova
+
+```
+
+*2.5 Compare summary(fit.1.2.3) and anova(fit.1.2.3)*
+
+```{r}
+summary(fit.1.2.3)
+anova(fit.1.2.3)
+
+anova(fit.1.2.3)$"Mean Sq"[1]/anova(fit.1.2.3)$"Mean Sq"[3] #f value
+```
+*3. Use anova() to compare nested linear models*
+Function anova() can be used to compare nested linear models
+```{r}
+anova(fit.1.2,fit.1.2.3)
+
+```
+
+Did adding Input.2 change RSS in the anova table?
+```{r}
+summary(fit.1.2.3)
+anova(fit.1.2.3)
+
+#No, the RSS is both equal to 185.38
+
+
+```
+

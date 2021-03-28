@@ -1,0 +1,67 @@
+---
+title: "Assignment Demo 9"
+author: "Melanie Tran"
+date: "11/29/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+dataPath <- setwd('/Users/meltra02/Desktop/MSCA/Quarter 1/31007 - Stats Analysis/Session 9 - 31007/')
+
+
+```
+
+```{r}
+Project.Data<-read.csv(file=paste(dataPath,"PCA_ExampleData.csv",sep="/"),header=T)
+head(Project.Data)
+```
+The first row of Project.Data contains the levels at which the variables are measured.
+Separate them from the Outputs for further analysis
+```{r}
+Data.Levels<-as.numeric(Project.Data[1,])
+Project.Data<-Project.Data[-1,]
+head(Project.Data)
+```
+
+```{r}
+matplot(Project.Data,type="l")
+```
+
+Apply princomp() to Project.Data, identify and interpret factor loadings. Check importance of factors and decide how many factors you would leave in the model.
+```{r}
+Project.Data.PCA <- princomp(Project.Data, cor = TRUE, score = TRUE)
+summary(Project.Data.PCA)
+```
+
+```{r}
+names(Project.Data.PCA)
+
+
+```
+
+```{r}
+summary(Project.Data.PCA)
+```
+```{r}
+load <- loadings(Project.Data.PCA)
+plot(load)
+```
+
+```{r}
+scores <- Project.Data.PCA$scores
+plot(scores)
+```
+
+```{r}
+Project.Data.Norm <- as.data.frame(apply(Project.Data,2,function(z) z/sd(z))) 
+pairs(Project.Data.Norm)
+```
+```{r}
+cor_Norm <- cor(Project.Data.Norm)
+princomp(cor_Norm, cor = TRUE, scores = TRUE)
+```
+
+```{r}
+factanal(Project.Data, factors = 3, roration = "none", scores = "regression")
+```
+

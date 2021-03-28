@@ -1,0 +1,8 @@
+dataPath <- setwd('/Users/meltra02/Desktop/MSCA/Quarter 1/31007 - Stats Analysis/Session 8 - 31007/')
+data <- read.csv(paste(dataPath, "test_sample.csv", sep="/"))
+
+head(data)
+model <- aov(data$x ~ data$t, data = data)
+summary(model)
+tukey_test <- TukeyHSD((model), conf.level = 0.99)
+tukey_test
